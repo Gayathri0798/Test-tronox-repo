@@ -1,28 +1,26 @@
-import { Component, AfterViewInit } from '@angular/core';
-import RFB from 'novnc/core/rfb';
+import { Component, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
+
+declare var RFB: any; // Declare noVNC globally
 
 @Component({
   selector: 'app-vnc-viewer',
-  standalone: true,
-  imports: [],
   templateUrl: './vnc-viewer.component.html',
   styleUrls: ['./vnc-viewer.component.css'],
+  standalone: true, // ✅ If using standalone
 })
 export class VncViewerComponent implements AfterViewInit {
+  @ViewChild('vncContainer', { static: false }) vncContainer!: ElementRef;
+  private rfb: any;
+
   ngAfterViewInit() {
-    const container = document.getElementById('vnc-container') as HTMLElement;
-
-    if (!container) {
-      console.error('VNC container element not found!');
-      return;
-    }
-
-    const vncUrl = 'ws://34.93.172.107:6080/websockify';
-    try {
-      const rfb = new RFB(container, vncUrl);
-      rfb.viewOnly = false; // ✅ Allow user interaction
-    } catch (error) {
-      console.error('Error initializing noVNC:', error);
+    if (typeof RFB !== 'undefined') {
+      this.rfb = new RFB(
+        this.vncContainer.nativeElement,
+        'ws://34.93.172.107:5900'
+      );
+      this.rfb.viewOnly = false; // Enable interaction
+    } else {
+      console.error('noVNC is not loaded');
     }
   }
 }
