@@ -52,19 +52,9 @@ export const config: WebdriverIO.Config = {
     // https://saucelabs.com/platform/platform-configurator
     //
     capabilities: [{
-        browserName: 'MicrosoftEdge',
-        'ms:edgeOptions': {
-            args: ['--disable-popup-blocking', '--no-sandbox','--headless']
-        }
-    },
-    {
-        browserName: 'chrome',
-        'goog:chromeOptions': {
-          args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
-        },
-      },
-    ],
-      
+        browserName: 'chrome'
+    }],
+
     //
     // ===================
     // Test Configurations
