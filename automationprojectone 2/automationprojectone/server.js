@@ -1,6 +1,5 @@
 import express from "express";
 import { exec } from "child_process";
-import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
 
 const app = express();
