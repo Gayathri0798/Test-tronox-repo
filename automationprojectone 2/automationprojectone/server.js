@@ -1,5 +1,7 @@
 import express from "express";
 import { exec } from "child_process";
+import cors from "cors";
+import { createProxyMiddleware } from "http-proxy-middleware";
 
 const app = express();
 const port = 3000;
@@ -24,6 +26,17 @@ app.post("/run-test", (req, res) => {
     res.send(`Test run completed successfully: ${stdout}`);
   });
 });
+
+// WebSocket Proxy for noVNC (VNC Streaming)
+app.use(
+  "/websockify",
+  createProxyMiddleware({
+    target: "ws://localhost:5900", // Change this if VNC is on another machine
+    ws: true,
+    changeOrigin: true,
+    logLevel: "debug",
+  })
+);
 
 // Example route for checking server status
 app.get("/api/status", (req, res) => {
