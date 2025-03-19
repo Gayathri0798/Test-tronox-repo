@@ -23,7 +23,7 @@ export const config: WebdriverIO.Config = {
     // of the config file unless it's absolute.
     //
     specs: [
-        './test/specs/**/*.ts'
+        './test/specs/**/test.e2e.js'
     ],
     // Patterns to exclude.
     exclude: [
@@ -56,8 +56,15 @@ export const config: WebdriverIO.Config = {
         'ms:edgeOptions': {
             args: ['--disable-popup-blocking', '--no-sandbox','--headless']
         }
-    }],
-
+    },
+    {
+        browserName: 'chrome',
+        'goog:chromeOptions': {
+          args: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage'],
+        },
+      },
+    ],
+      
     //
     // ===================
     // Test Configurations
