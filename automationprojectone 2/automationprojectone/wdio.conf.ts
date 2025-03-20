@@ -57,6 +57,7 @@ export const config: WebdriverIO.Config = {
             args: ['--headless']  
         }
     }],
+    
 
     //
     // ===================

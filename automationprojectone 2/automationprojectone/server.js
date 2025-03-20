@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import wrtc from "wrtc";
 import ffmpeg from "fluent-ffmpeg";
+import puppeteer from "puppeteer";
 
 const app = express();
 const port = 3000;
@@ -102,30 +103,40 @@ io.on("connection", (socket) => {
 });
 
 // Route to trigger WebDriverIO test
-app.post("/run-test", (req, res) => {
-  if (childProcess) {
-    return res.status(400).json({ message: "Test is already running." });
-  }
+app.post("/run-test", async (req, res) => {
+  console.log("Starting Puppeteer test...");
 
-  console.log("Starting WDIO test...");
-  childProcess = exec("npm run wdio");
+  (async () => {
+    try {
+      const browser = await puppeteer.launch({
+        headless: false, // Set to false to see the browser (on local machine)
+        args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for GCP
+      });
 
-  childProcess.stdout.on("data", (data) => {
-    console.log(`stdout: ${data}`);
-    io.emit("test-log", data.toString());
-  });
+      const page = await browser.newPage();
+      await page.goto("https://the-internet.herokuapp.com/login");
 
-  childProcess.stderr.on("data", (data) => {
-    console.error(`stderr: ${data}`);
-    io.emit("test-log", `Error: ${data}`);
-  });
+      await page.type("#username", "tomsmith");
+      await page.type("#password", "SuperSecretPassword!");
+      await page.click('button[type="submit"]');
 
-  childProcess.on("exit", (code) => {
-    console.log(`Test process exited with code ${code}`);
-    childProcess = null;
-  });
+      await page.waitForSelector("#flash");
+      const flashText = await page.$eval("#flash", (el) => el.textContent);
 
-  res.json({ message: "Test started." });
+      console.log("Flash Message:", flashText);
+      io.emit("test-log", flashText);
+
+      // Take a screenshot to verify execution
+      await page.screenshot({ path: "screenshot.png" });
+
+      await browser.close();
+    } catch (error) {
+      console.error("Puppeteer error:", error);
+      io.emit("test-log", `Error: ${error.message}`);
+    }
+  })();
+
+  res.json({ message: "Test started with Puppeteer." });
 });
 
 // Example route for checking server status
