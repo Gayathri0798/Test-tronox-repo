@@ -13,7 +13,9 @@ export class AppComponent {
   title = 'automation-project-fe';
   disableButton = false;
 
-  constructor(private appService: AppService) {}
+  constructor(private appService: AppService) {
+    console.log('App component loaded');
+  }
 
   onRunTestClick() {
     this.disableButton = true;
