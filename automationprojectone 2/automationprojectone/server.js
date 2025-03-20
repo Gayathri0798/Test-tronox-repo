@@ -104,7 +104,7 @@ io.on("connection", (socket) => {
 // Route to trigger WebDriverIO test
 app.post("/run-test", (req, res) => {
   if (childProcess) {
-    return res.status(400).send("Test is already running.");
+    return res.status(400).json({ message: "Test is already running." });
   }
 
   console.log("Starting WDIO test...");
@@ -125,7 +125,7 @@ app.post("/run-test", (req, res) => {
     childProcess = null;
   });
 
-  res.send("Test started.");
+  res.json({ message: "Test started." });
 });
 
 // Example route for checking server status
