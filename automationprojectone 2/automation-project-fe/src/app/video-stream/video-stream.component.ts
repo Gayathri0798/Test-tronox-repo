@@ -1,4 +1,10 @@
-import { Component, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import {
+  Component,
+  AfterViewInit,
+  ViewChild,
+  ElementRef,
+  OnDestroy,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StreamService } from '../stream.service';
 
@@ -9,22 +15,26 @@ import { StreamService } from '../stream.service';
   template: `<video #videoPlayer autoplay playsinline></video>`,
   styles: ['video { width: 100%; height: auto; }'],
 })
-export class VideoStreamComponent implements AfterViewInit {
+export class VideoStreamComponent implements AfterViewInit, OnDestroy {
   @ViewChild('videoPlayer', { static: false })
-  videoPlayer?: ElementRef<HTMLVideoElement>; // Optional for safety
+  videoPlayer?: ElementRef<HTMLVideoElement>;
 
   constructor(private streamService: StreamService) {}
 
   ngAfterViewInit() {
-    if (this.videoPlayer?.nativeElement) {
-      console.log('🎥 Video player found, starting stream...');
-      this.streamService
-        .startStreaming(this.videoPlayer.nativeElement)
-        .catch((error) => {
-          console.error('❌ Error starting stream:', error);
-        });
-    } else {
+    if (!this.videoPlayer?.nativeElement) {
       console.error('⚠️ Video player not found!');
+      return;
     }
+
+    console.log('🎥 Video player found, starting stream...');
+    this.streamService
+      .startStreaming(this.videoPlayer.nativeElement)
+      .catch((error) => console.error('❌ Error starting stream:', error));
+  }
+
+  ngOnDestroy() {
+    console.log('🛑 VideoStreamComponent destroyed, stopping stream...');
+    this.streamService.stopStreaming();
   }
 }
