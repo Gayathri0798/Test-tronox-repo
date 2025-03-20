@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
 import { AppService } from './app.service';
-import { VncViewerComponent } from './vnc-viewer/vnc-viewer.component';
+import { VideoStreamComponent } from './video-stream/video-stream.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [VncViewerComponent],
+  imports: [VideoStreamComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
