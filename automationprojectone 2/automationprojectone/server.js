@@ -1,62 +1,91 @@
 import express from "express";
-import { exec } from "child_process";
+import { exec, spawn } from "child_process";
 import cors from "cors";
+import fs from "fs";
+import path from "path";
 
 const app = express();
 const port = 3000;
+let ffmpegProcess = null; // Store FFmpeg process
 
-app.use(cors()); // Allow CORS for testing
+app.use(cors());
 
-// Route to trigger WebDriverIO test
+// Route to trigger the test case and start screen capture
 app.post("/run-test", (req, res) => {
-  console.log("Running WebDriverIO test...");
+  // Start screen capture first
+  const videoPath = startScreenCapture();
 
-  // Run the WebDriverIO test case using a child process
+  // Run the test case using a child process
   exec("npm run wdio", (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
+      stopScreenCapture(videoPath); // Stop capture on error
       return res.status(500).send(`Test run failed: ${error.message}`);
     }
 
     if (stderr) {
       console.error(`stderr: ${stderr}`);
+      stopScreenCapture(videoPath); // Stop capture on error
       return res.status(500).send(`Test run failed with error: ${stderr}`);
     }
 
     console.log(`stdout: ${stdout}`);
-    res.send(`Test run completed successfully: ${stdout}`);
+    stopScreenCapture(videoPath); // Stop capture once test is done
+
+    // Send the video file URL to the frontend
+    const videoUrl = `/videos/capture.webm`;
+    res.json({ message: "Test run completed successfully!", videoUrl });
   });
 });
 
-// Route to trigger FFmpeg screen capture and stream
-app.post("/start-capture", (req, res) => {
-  console.log("Starting FFmpeg screen capture...");
+// Function to start screen capture
+function startScreenCapture() {
+  console.log("Starting screen capture...");
 
-  exec(
-    `ffmpeg -f x11grab -s 1920x1080 -i :0.0 -f webm - | websocat ws://localhost:${port}/webrtc`,
-    (error, stdout, stderr) => {
-      if (error) {
-        console.error(`Error executing FFmpeg: ${error}`);
-        return res.status(500).send(`Capture failed: ${error.message}`);
+  const videoPath = path.join(__dirname, "capture.webm");
+
+  // Start FFmpeg to capture the screen and save it to a file
+  ffmpegProcess = spawn("ffmpeg", [
+    "-f",
+    "x11grab",
+    "-s",
+    "1920x1080",
+    "-i",
+    ":0.0", // Adjust if needed (e.g., for a different display)
+    "-f",
+    "webm",
+    videoPath,
+  ]);
+
+  ffmpegProcess.on("error", (err) => {
+    console.error("Failed to start FFmpeg:", err);
+  });
+
+  return videoPath;
+}
+
+// Function to stop the screen capture
+function stopScreenCapture(videoPath) {
+  if (ffmpegProcess) {
+    ffmpegProcess.kill(); // Stop FFmpeg process
+    ffmpegProcess = null;
+    console.log("Screen capture stopped.");
+
+    // Check if the file exists, and clean up if needed
+    fs.access(videoPath, fs.constants.F_OK, (err) => {
+      if (err) {
+        console.error("Capture video does not exist:", err);
+      } else {
+        console.log(`Capture video saved at ${videoPath}`);
       }
+    });
+  }
+}
 
-      if (stderr) {
-        console.error(`stderr: ${stderr}`);
-        return res.status(500).send(`Capture failed with error: ${stderr}`);
-      }
+// Serve the video file for download or streaming
+app.use("/videos", express.static(path.join(__dirname, "capture.webm")));
 
-      console.log(`FFmpeg output: ${stdout}`);
-      res.send("Screen capture started successfully");
-    }
-  );
-});
-
-// Status check route
-app.get("/api/status", (req, res) => {
-  res.json({ message: "Server is running" });
-});
-
-// Start the HTTP server
+// Start the server
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
