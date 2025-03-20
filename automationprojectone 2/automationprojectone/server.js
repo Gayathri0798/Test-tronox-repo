@@ -9,14 +9,20 @@ import ffmpeg from "fluent-ffmpeg";
 const app = express();
 const port = 3000;
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "http://34.93.172.107",
-    methods: ["GET", "POST"],
-  },
-});
 
-app.use(cors());
+// Configure CORS properly before routes and Socket.IO
+const corsOptions = {
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+
+const io = new Server(server, {
+  cors: corsOptions,
+});
 
 let childProcess = null;
 let rtcPeerConnection = null;
@@ -63,18 +69,6 @@ io.on("connection", (socket) => {
         socket.emit("candidate", event.candidate);
       }
     };
-
-    const stream = startScreenCapture();
-    stream.format("mpegts").on("data", (chunk) => {
-      if (
-        rtcPeerConnection &&
-        rtcPeerConnection.connectionState === "connected"
-      ) {
-        const videoTrack = new wrtc.MediaStream();
-        videoTrack.addTrack(chunk); // Send chunks as a video stream
-        rtcPeerConnection.addTrack(videoTrack);
-      }
-    });
 
     await rtcPeerConnection.setRemoteDescription(
       new wrtc.RTCSessionDescription(offer)
