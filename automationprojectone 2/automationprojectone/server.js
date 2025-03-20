@@ -17,30 +17,41 @@ app.post("/run-test", async (req, res) => {
     fs.unlinkSync(videoPath);
   }
 
-  // Start FFmpeg screen recording
-  const ffmpegCommand = `ffmpeg -y -video_size 1280x720 -framerate 25 -f x11grab -i :99.0 ${videoPath}`;
-  const ffmpegProcess = exec(ffmpegCommand);
+  // Start Xvfb (virtual display)
+  exec("Xvfb :99 -screen 0 1280x720x24 &", (err, stdout, stderr) => {
+    if (err || stderr) {
+      console.error("Error starting Xvfb:", err || stderr);
+      return res.status(500).send("Error starting Xvfb.");
+    }
 
-  console.log("FFmpeg recording started...");
+    // Set the DISPLAY environment variable
+    process.env.DISPLAY = ":99";
 
-  // Wait 2 seconds to ensure FFmpeg is running
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Start FFmpeg screen recording
+    const ffmpegCommand = `ffmpeg -y -video_size 1280x720 -framerate 25 -f x11grab -i :99.0 ${videoPath}`;
+    const ffmpegProcess = exec(ffmpegCommand);
 
-  // Run WebDriverIO test
-  exec("npm run wdio", (error, stdout, stderr) => {
-    console.log("WebDriverIO test execution finished.");
+    console.log("FFmpeg recording started...");
 
-    // Stop FFmpeg gracefully
-    exec("pkill -INT ffmpeg", () => {
-      console.log("FFmpeg stopped.");
+    // Wait 2 seconds to ensure FFmpeg is running
+    setTimeout(() => {
+      // Run WebDriverIO test
+      exec("npm run wdio", (error, stdout, stderr) => {
+        console.log("WebDriverIO test execution finished.");
 
-      if (error || stderr) {
-        console.error(`Test error: ${error || stderr}`);
-        return res.status(500).send("Test failed.");
-      }
+        // Stop FFmpeg gracefully
+        ffmpegProcess.on("close", () => {
+          console.log("FFmpeg stopped.");
 
-      res.send("Test run completed.");
-    });
+          if (error || stderr) {
+            console.error(`Test error: ${error || stderr}`);
+            return res.status(500).send("Test failed.");
+          }
+
+          res.send("Test run completed.");
+        });
+      });
+    }, 2000);
   });
 });
 
