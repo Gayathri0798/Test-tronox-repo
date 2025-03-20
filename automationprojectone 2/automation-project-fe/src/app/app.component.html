@@ -3,4 +3,8 @@
     <button class="run-test-btn" (click)="onRunTestClick()">Run Test</button>
   </div>
 </div>
-<app-video-stream></app-video-stream>
+<h3>Test Video</h3>
+<video width="640" height="360" controls>
+  <source [src]="videoUrl" type="video/webm" />
+  Your browser does not support the video tag.
+</video>
