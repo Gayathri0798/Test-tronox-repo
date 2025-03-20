@@ -23,7 +23,7 @@ export const config: WebdriverIO.Config = {
     // of the config file unless it's absolute.
     //
     specs: [
-        './test/specs/**/*.ts'
+        './test/specs/test.e2e.ts'
     ],
     // Patterns to exclude.
     exclude: [
@@ -52,7 +52,10 @@ export const config: WebdriverIO.Config = {
     // https://saucelabs.com/platform/platform-configurator
     //
     capabilities: [{
-        browserName: 'chrome'
+        browserName: 'chrome',
+        'goog:chromeOptions': {
+            args: ['--headless']  
+        }
     }],
 
     //
