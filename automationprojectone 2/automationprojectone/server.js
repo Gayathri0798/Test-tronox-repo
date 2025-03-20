@@ -3,6 +3,7 @@ import { exec } from "child_process";
 import path from "path"; // Import path module
 import fs from "fs"; // For file system
 import { fileURLToPath } from "url"; // To get __dirname equivalent
+import cors from "cors"; // Import CORS module
 
 // Equivalent to __dirname in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -10,6 +11,15 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 3000;
+
+// Enable CORS for your frontend's origin
+app.use(
+  cors({
+    origin: "http://34.93.172.107", // Allow requests from your frontend
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 
 // Serve the video file from the /videos route (the capture will be stored here)
 app.use("/videos", express.static(path.join(__dirname, "capture.webm")));
