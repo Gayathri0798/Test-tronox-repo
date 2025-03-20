@@ -2,4 +2,7 @@
   <div class="container">
     <button class="run-test-btn" (click)="onRunTestClick()">Run Test</button>
   </div>
+  @if(videoUrl){
+  <video [src]="videoUrl" controls width="800"></video>
+  }
 </div>
