@@ -1,64 +1,62 @@
 import express from "express";
 import { exec } from "child_process";
-import WebSocket from "ws";
-import SimplePeer from "simple-peer";
+import cors from "cors";
 
 const app = express();
 const port = 3000;
 
-// Create WebSocket server for WebRTC signaling
-const wss = new WebSocket.Server({ noServer: true });
+app.use(cors()); // Allow CORS for testing
 
-// Handle WebSocket connections and WebRTC signaling
-wss.on("connection", (ws) => {
-  const peer = new SimplePeer({
-    initiator: false, // The client will initiate the connection
-    trickle: false,
+// Route to trigger WebDriverIO test
+app.post("/run-test", (req, res) => {
+  console.log("Running WebDriverIO test...");
+
+  // Run the WebDriverIO test case using a child process
+  exec("npm run wdio", (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+      return res.status(500).send(`Test run failed: ${error.message}`);
+    }
+
+    if (stderr) {
+      console.error(`stderr: ${stderr}`);
+      return res.status(500).send(`Test run failed with error: ${stderr}`);
+    }
+
+    console.log(`stdout: ${stdout}`);
+    res.send(`Test run completed successfully: ${stdout}`);
   });
+});
 
-  // Send signaling data to the client
-  peer.on("signal", (data) => {
-    ws.send(JSON.stringify({ signal: data }));
-  });
+// Route to trigger FFmpeg screen capture and stream
+app.post("/start-capture", (req, res) => {
+  console.log("Starting FFmpeg screen capture...");
 
-  // Receive the signaling data from the client
-  ws.on("message", (message) => {
-    const { signal } = JSON.parse(message);
-    peer.signal(signal);
-  });
-
-  // Once connected, start capturing the screen with FFmpeg
-  peer.on("connect", () => {
-    console.log("WebRTC peer connected. Starting screen capture...");
-
-    // Start FFmpeg to capture the screen and stream it
-    exec(
-      `ffmpeg -f x11grab -s 1920x1080 -i :0.0 -f webm - | websocat ws://localhost:${port}/webrtc`,
-      (error, stdout, stderr) => {
-        if (error) {
-          console.error(`Error executing FFmpeg: ${error}`);
-          return;
-        }
-        console.log(`FFmpeg output: ${stdout}`);
+  exec(
+    `ffmpeg -f x11grab -s 1920x1080 -i :0.0 -f webm - | websocat ws://localhost:${port}/webrtc`,
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error executing FFmpeg: ${error}`);
+        return res.status(500).send(`Capture failed: ${error.message}`);
       }
-    );
-  });
 
-  // Handle incoming WebRTC data (optional)
-  peer.on("data", (data) => {
-    console.log("Received data: ", data);
-  });
+      if (stderr) {
+        console.error(`stderr: ${stderr}`);
+        return res.status(500).send(`Capture failed with error: ${stderr}`);
+      }
+
+      console.log(`FFmpeg output: ${stdout}`);
+      res.send("Screen capture started successfully");
+    }
+  );
 });
 
-// Upgrade HTTP request to WebSocket for WebRTC signaling
-app.server = app.listen(port, () => {
+// Status check route
+app.get("/api/status", (req, res) => {
+  res.json({ message: "Server is running" });
+});
+
+// Start the HTTP server
+app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
-});
-
-app.server.on("upgrade", (request, socket, head) => {
-  if (request.url === "/webrtc") {
-    wss.handleUpgrade(request, socket, head, (ws) => {
-      wss.emit("connection", ws, request);
-    });
-  }
 });
