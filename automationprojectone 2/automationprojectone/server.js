@@ -13,13 +13,14 @@ const server = http.createServer(app);
 
 // Configure CORS properly before routes and Socket.IO
 const corsOptions = {
-  origin: "*",
+  origin: "http://34.93.172.107", // Allow only your frontend
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Handle preflight requests explicitly
 
 const io = new Server(server, {
   cors: corsOptions,
