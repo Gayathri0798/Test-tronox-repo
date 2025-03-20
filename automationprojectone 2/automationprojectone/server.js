@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import wrtc from "wrtc";
 import ffmpeg from "fluent-ffmpeg";
+import { Readable } from "stream";
 
 const app = express();
 const port = 3000;
@@ -37,20 +38,21 @@ const rtcConfig = {
 function startScreenCapture() {
   console.log("Starting FFmpeg screen capture...");
 
+  // Using Xvfb for headless screen capture
   return ffmpeg()
-    .input(":0.0") // Captures the default X11 display
+    .input(":99.0") // Use virtual display
     .inputFormat("x11grab")
-    .videoCodec("libx264")
-    .fps(25)
+    .videoCodec("libvpx") // VP8 codec for WebRTC
+    .fps(30)
     .size("1280x720")
     .outputOptions([
       "-preset ultrafast",
       "-tune zerolatency",
       "-pix_fmt yuv420p",
-      "-b:v 450k", // Bitrate adjustment
-      "-bufsize 450k",
+      "-b:v 500k", // Bitrate adjustment
+      "-bufsize 1000k",
     ])
-    .format("mpegts") // MPEG-TS format for low latency streaming
+    .format("webm") // WebRTC-friendly format
     .on("start", () => console.log("FFmpeg streaming started"))
     .on("error", (err) => console.error("FFmpeg error:", err))
     .on("end", () => console.log("FFmpeg stream ended"));
@@ -78,6 +80,21 @@ io.on("connection", (socket) => {
     await rtcPeerConnection.setLocalDescription(answer);
 
     socket.emit("answer", answer);
+
+    // Start FFmpeg and get the output as a readable stream
+    senderStream = startScreenCapture();
+
+    // Convert the FFmpeg output to a readable stream
+    const readableStream = new Readable().wrap(senderStream.pipe());
+
+    // Create WebRTC track
+    const videoTrack = new wrtc.MediaStreamTrack({ kind: "video" });
+
+    readableStream.on("data", (chunk) => {
+      videoTrack.write(chunk);
+    });
+
+    rtcPeerConnection.addTrack(videoTrack);
   });
 
   socket.on("candidate", async (candidate) => {
