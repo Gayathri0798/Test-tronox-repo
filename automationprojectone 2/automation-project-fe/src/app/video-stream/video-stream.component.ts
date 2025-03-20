@@ -16,7 +16,8 @@ export class VideoStreamComponent implements AfterViewInit {
   constructor(private streamService: StreamService) {}
 
   ngAfterViewInit() {
-    if (this.videoPlayer) {
+    if (this.videoPlayer?.nativeElement) {
+      console.log('🎥 Video player found, starting stream...');
       this.streamService
         .startStreaming(this.videoPlayer.nativeElement)
         .catch((error) => {

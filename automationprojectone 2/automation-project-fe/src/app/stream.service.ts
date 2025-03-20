@@ -10,11 +10,12 @@ export class StreamService {
   private remoteStream!: MediaStream;
 
   constructor() {
+    console.log('🚀 StreamService instantiated!');
     this.setupSocketListeners();
   }
 
   async startStreaming(videoElement: HTMLVideoElement) {
-    console.log('Initializing WebRTC connection...');
+    console.log('🎬 Initializing WebRTC connection...');
 
     this.peerConnection = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
@@ -53,6 +54,8 @@ export class StreamService {
   }
 
   private setupSocketListeners() {
+    console.log('🛠️ Setting up WebSocket listeners...');
+
     this.socket.on('connect', () => {
       console.log('✅ Connected to WebSocket');
     });
