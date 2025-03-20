@@ -1,11 +1,10 @@
 import { Component } from '@angular/core';
 import { AppService } from './app.service';
-import { VideoStreamComponent } from './video-stream/video-stream.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [VideoStreamComponent],
+  imports: [],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
@@ -13,9 +12,7 @@ export class AppComponent {
   title = 'automation-project-fe';
   disableButton = false;
 
-  constructor(private appService: AppService) {
-    console.log('App component loaded');
-  }
+  constructor(private appService: AppService) {}
 
   onRunTestClick() {
     this.disableButton = true;
