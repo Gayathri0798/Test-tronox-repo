@@ -45,7 +45,6 @@ function startScreenCapture() {
       "-bufsize 450k",
     ])
     .format("mpegts") // MPEG-TS format for low latency streaming
-    .output("udp://127.0.0.1:5004") // Stream to UDP port
     .on("start", () => console.log("FFmpeg streaming started"))
     .on("error", (err) => console.error("FFmpeg error:", err))
     .on("end", () => console.log("FFmpeg stream ended"));
@@ -65,14 +64,17 @@ io.on("connection", (socket) => {
       }
     };
 
-    const videoTrack = new wrtc.MediaStreamTrack({
-      kind: "video",
+    const stream = startScreenCapture();
+    stream.format("mpegts").on("data", (chunk) => {
+      if (
+        rtcPeerConnection &&
+        rtcPeerConnection.connectionState === "connected"
+      ) {
+        const videoTrack = new wrtc.MediaStream();
+        videoTrack.addTrack(chunk); // Send chunks as a video stream
+        rtcPeerConnection.addTrack(videoTrack);
+      }
     });
-
-    senderStream = startScreenCapture();
-    senderStream.pipe(videoTrack); // Pipe FFmpeg output to WebRTC track
-
-    rtcPeerConnection.addTrack(videoTrack);
 
     await rtcPeerConnection.setRemoteDescription(
       new wrtc.RTCSessionDescription(offer)
