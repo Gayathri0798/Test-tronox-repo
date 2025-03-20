@@ -109,9 +109,9 @@ app.post("/run-test", async (req, res) => {
   (async () => {
     try {
       const browser = await puppeteer.launch({
-        headless: false, // Set to false to see the browser (on local machine)
+        headless: "new", // Ensures headless mode is used in newer Puppeteer versions
         args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for GCP
-      });
+      });      
 
       const page = await browser.newPage();
       await page.goto("https://the-internet.herokuapp.com/login");
