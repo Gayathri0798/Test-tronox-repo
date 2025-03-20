@@ -11,9 +11,9 @@ const app = express();
 const port = 3000;
 const server = http.createServer(app);
 
-// Updated CORS configuration
+// Configure CORS properly before routes and Socket.IO
 const corsOptions = {
-  origin: "http://34.93.172.107", // Update this if your frontend runs on a different port
+  origin: "*",
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
   credentials: true,
@@ -28,6 +28,8 @@ const io = new Server(server, {
 let childProcess = null;
 let rtcPeerConnection = null;
 let senderStream = null;
+let videoSource = null;
+let videoTrack = null;
 
 // WebRTC Configuration
 const rtcConfig = {
@@ -39,16 +41,16 @@ function startScreenCapture() {
   console.log("Starting FFmpeg screen capture...");
 
   return ffmpeg()
-    .input(":99.0") // Using Xvfb for headless screen capture
+    .input(":99.0") // Use virtual display
     .inputFormat("x11grab")
-    .videoCodec("libvpx")
+    .videoCodec("libvpx") // VP8 codec for WebRTC
     .fps(30)
     .size("1280x720")
     .outputOptions([
       "-preset ultrafast",
       "-tune zerolatency",
       "-pix_fmt yuv420p",
-      "-b:v 500k", // Adjust bitrate
+      "-b:v 500k", // Bitrate adjustment
       "-bufsize 1000k",
     ])
     .format("webm") // WebRTC-friendly format
@@ -80,12 +82,18 @@ io.on("connection", (socket) => {
 
     socket.emit("answer", answer);
 
+    // Start FFmpeg and get the output as a readable stream
     senderStream = startScreenCapture();
+
+    // Use RTCVideoSource to create a track
+    videoSource = new wrtc.nonstandard.RTCVideoSource();
+    videoTrack = videoSource.createTrack();
+
+    // Convert the FFmpeg output to a readable stream
     const readableStream = new Readable().wrap(senderStream.pipe());
 
-    const videoTrack = new wrtc.MediaStreamTrack({ kind: "video" });
     readableStream.on("data", (chunk) => {
-      videoTrack.write(chunk);
+      videoSource.onFrame({ data: chunk, width: 1280, height: 720 });
     });
 
     rtcPeerConnection.addTrack(videoTrack);
@@ -108,6 +116,10 @@ io.on("connection", (socket) => {
     if (senderStream) {
       senderStream.kill("SIGTERM");
       senderStream = null;
+    }
+    if (videoTrack) {
+      videoTrack.stop();
+      videoTrack = null;
     }
   });
 });
@@ -139,7 +151,7 @@ app.post("/run-test", (req, res) => {
   res.json({ message: "Test started." });
 });
 
-// Route for checking server status
+// Example route for checking server status
 app.get("/api/status", (req, res) => {
   res.json({ message: "WDIO Express API with WebRTC streaming is working" });
 });
