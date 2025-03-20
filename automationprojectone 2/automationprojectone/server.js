@@ -11,9 +11,9 @@ const app = express();
 const port = 3000;
 const server = http.createServer(app);
 
-// Configure CORS properly before routes and Socket.IO
+// Updated CORS configuration
 const corsOptions = {
-  origin: "*",
+  origin: "http://34.93.172.107", // Update this if your frontend runs on a different port
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
   credentials: true,
@@ -38,18 +38,17 @@ const rtcConfig = {
 function startScreenCapture() {
   console.log("Starting FFmpeg screen capture...");
 
-  // Using Xvfb for headless screen capture
   return ffmpeg()
-    .input(":99.0") // Use virtual display
+    .input(":99.0") // Using Xvfb for headless screen capture
     .inputFormat("x11grab")
-    .videoCodec("libvpx") // VP8 codec for WebRTC
+    .videoCodec("libvpx")
     .fps(30)
     .size("1280x720")
     .outputOptions([
       "-preset ultrafast",
       "-tune zerolatency",
       "-pix_fmt yuv420p",
-      "-b:v 500k", // Bitrate adjustment
+      "-b:v 500k", // Adjust bitrate
       "-bufsize 1000k",
     ])
     .format("webm") // WebRTC-friendly format
@@ -81,15 +80,10 @@ io.on("connection", (socket) => {
 
     socket.emit("answer", answer);
 
-    // Start FFmpeg and get the output as a readable stream
     senderStream = startScreenCapture();
-
-    // Convert the FFmpeg output to a readable stream
     const readableStream = new Readable().wrap(senderStream.pipe());
 
-    // Create WebRTC track
     const videoTrack = new wrtc.MediaStreamTrack({ kind: "video" });
-
     readableStream.on("data", (chunk) => {
       videoTrack.write(chunk);
     });
@@ -145,7 +139,7 @@ app.post("/run-test", (req, res) => {
   res.json({ message: "Test started." });
 });
 
-// Example route for checking server status
+// Route for checking server status
 app.get("/api/status", (req, res) => {
   res.json({ message: "WDIO Express API with WebRTC streaming is working" });
 });
