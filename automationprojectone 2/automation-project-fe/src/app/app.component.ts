@@ -27,9 +27,9 @@ export class AppComponent {
           this.disableButton = false;
 
           // Listen for video URL from WebSocket (after test completion)
-          this.socket.on("test-video", (videoData: any) => {
+          this.socket.on('test-video', (videoData: any) => {
             this.videoUrl = `http://34.93.172.107:3000${videoData.videoUrl}`;
-          });          
+          });
         }
       },
       error: (err) => {
