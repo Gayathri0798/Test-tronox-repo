@@ -191,7 +191,13 @@ app.post("/run-test", async (req, res) => {
     try {
       const browser = await puppeteer.launch({
         headless: "new", // Ensures headless mode is used
-        args: ["--no-sandbox", "--disable-setuid-sandbox"], // Required for GCP
+        args: ["--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--disable-software-rasterizer",
+    "--ignore-certificate-errors",
+    "--ignore-certificate-errors-spki-list"], // Required for GCP
       });
 
       const page = await browser.newPage();
