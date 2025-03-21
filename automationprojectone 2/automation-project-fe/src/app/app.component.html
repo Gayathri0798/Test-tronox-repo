@@ -2,4 +2,6 @@
   <div class="container">
     <button class="run-test-btn" (click)="onRunTestClick()">Run Test</button>
   </div>
+  <button (click)="onRunTestClick()" [disabled]="disableButton">Run Test</button>
+<video *ngIf="videoUrl" [src]="videoUrl" controls autoplay></video>
 </div>
