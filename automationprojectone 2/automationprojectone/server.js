@@ -78,6 +78,7 @@ function startScreenCapture() {
     .on("start", () =>
       console.log(`FFmpeg recording started: ${videoFilePath}`)
     )
+    .on("stderr", (stderr) => console.log("FFmpeg Log:", stderr))
     .on("error", (err) => console.error("FFmpeg error:", err))
     .on("end", () => console.log("FFmpeg recording finished"));
 
@@ -120,6 +121,7 @@ io.on("connection", (socket) => {
     const readableStream = new Readable().wrap(senderStream.pipe());
 
     readableStream.on("data", (chunk) => {
+      console.log("Received video frame chunk");
       videoSource.onFrame({ data: chunk, width: 1280, height: 720 });
     });
 
