@@ -9,7 +9,7 @@ export class AppService {
   constructor(private http: HttpClient) {}
 
   runTest() {
-    const RUN_TEST_URL = 'http://34.93.172.107:3000/run-test';
+    const RUN_TEST_URL = 'http://35.200.245.66:3000/run-test';
     return this.http.post<any>(RUN_TEST_URL, {});
   }
 }
