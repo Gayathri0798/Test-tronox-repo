@@ -185,26 +185,40 @@ io.on("connection", (socket) => {
 
 // Route to trigger Puppeteer test
 app.post("/run-test", async (req, res) => {
-  console.log("Starting Puppeteer test...");
+  console.log("Starting Puppeteer test with video streaming...");
 
   (async () => {
     try {
       const browser = await puppeteer.launch({
-        headless: "new", // Ensures headless mode is used
+        headless: false, // Disable headless to see if errors appear in UI
         args: ["--no-sandbox",
     "--disable-setuid-sandbox",
     "--disable-dev-shm-usage",
     "--disable-gpu",
     "--disable-software-rasterizer",
     "--ignore-certificate-errors",
-    "--ignore-certificate-errors-spki-list"], // Required for GCP
+    "--ignore-certificate-errors-spki-list",
+    "--proxy-server='direct://'", // Bypass proxy
+    "--proxy-bypass-list=*", // Prevent proxy interference
+    "--host-resolver-rules='MAP * ~NOTFOUND , EXCLUDE localhost'", // Force DNS resolution
+    ],
       });
 
       const page = await browser.newPage();
+      await page.setViewport({ width: 1280, height: 720 });
 
-      // Log console messages from the Puppeteer page
-      page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
+      // ✅ Test if Puppeteer can access the internet
+      try {
+        await page.goto("https://www.google.com", { waitUntil: "networkidle2" });
+        console.log("✅ Puppeteer successfully accessed Google.");
+      } catch (error) {
+        console.error("❌ Puppeteer cannot access the internet:", error.message);
+        io.emit("test-log", `Error: Cannot access the internet - ${error.message}`);
+        await browser.close();
+        return;
+      }
 
+      // 🔵 Now navigate to the actual test page
       await page.goto("https://the-internet.herokuapp.com/login");
 
       await page.type("#username", "tomsmith");
@@ -212,27 +226,25 @@ app.post("/run-test", async (req, res) => {
       await page.click('button[type="submit"]');
 
       await page.waitForSelector("#flash");
-
       const flashText = await page.$eval("#flash", (el) => el.textContent.trim());
-      console.log("Flash Message:", flashText);
 
-      // Send message to frontend via WebSocket
+      console.log("Flash Message:", flashText);
       io.emit("test-log", flashText);
 
-      // Take a screenshot for debugging
-      await page.screenshot({ path: "screenshot.png" });
-      console.log("Screenshot saved as screenshot.png");
-
-      await browser.close();
-      console.log("Puppeteer test completed!");
+      // Test done, close browser after 10 seconds
+      setTimeout(async () => {
+        await browser.close();
+        console.log("Puppeteer test completed!");
+      }, 10000);
     } catch (error) {
       console.error("Puppeteer error:", error);
       io.emit("test-log", `Error: ${error.message}`);
     }
   })();
 
-  res.json({ message: "Test started with Puppeteer." });
+  res.json({ message: "Test started with Puppeteer & Video Streaming." });
 });
+
 
 // Example route for checking server status
 app.get("/api/status", (req, res) => {
