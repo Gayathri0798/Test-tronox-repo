@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { AppService } from './app.service';
+import { VideoStreamComponent } from './video-stream/video-stream.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [],
+  imports: [VideoStreamComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css',
 })
