@@ -1,81 +1,171 @@
 import express from "express";
 import { exec } from "child_process";
-import path from "path"; // Import path module
-import fs from "fs"; // For file system
-import { fileURLToPath } from "url"; // To get __dirname equivalent
-import cors from "cors"; // Import CORS module
-
-// Equivalent to __dirname in ES Modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import http from "http";
+import { Server } from "socket.io";
+import cors from "cors";
+import wrtc from "wrtc";
+import ffmpeg from "fluent-ffmpeg";
+import { Readable } from "stream";
 
 const app = express();
 const port = 3000;
+const server = http.createServer(app);
 
-// Enable CORS for your frontend's origin
-app.use(
-  cors({
-    origin: "http://34.93.172.107", // Allow requests from your frontend
-    methods: ["GET", "POST"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
+// Configure CORS properly before routes and Socket.IO
+const corsOptions = {
+  origin: "http://34.93.172.107", // Allow only your frontend
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"],
+  credentials: true,
+};
 
-// Serve the video file from the /videos route (the capture will be stored here)
-app.use("/videos", express.static(path.join(__dirname, "capture.webm")));
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // Handle preflight requests explicitly
 
-// Route to trigger the test case
-app.post("/run-test", (req, res) => {
-  // Run the test case using a child process (assuming you are capturing the screen using FFmpeg)
-  exec("npm run wdio", (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return res.status(500).send(`Test run failed: ${error.message}`);
+const io = new Server(server, {
+  cors: corsOptions,
+});
+
+let childProcess = null;
+let rtcPeerConnection = null;
+let senderStream = null;
+let videoSource = null;
+let videoTrack = null;
+
+// WebRTC Configuration
+const rtcConfig = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+};
+
+// Function to start FFmpeg screen capture
+function startScreenCapture() {
+  console.log("Starting FFmpeg screen capture...");
+
+  return ffmpeg()
+    .input(":99.0") // Use virtual display
+    .inputFormat("x11grab")
+    .videoCodec("libvpx") // VP8 codec for WebRTC
+    .fps(30)
+    .size("1280x720")
+    .outputOptions([
+      "-preset ultrafast",
+      "-tune zerolatency",
+      "-pix_fmt yuv420p",
+      "-b:v 500k", // Bitrate adjustment
+      "-bufsize 1000k",
+    ])
+    .format("webm") // WebRTC-friendly format
+    .on("start", () => console.log("FFmpeg streaming started"))
+    .on("error", (err) => console.error("FFmpeg error:", err))
+    .on("end", () => console.log("FFmpeg stream ended"));
+}
+
+// WebRTC Signaling
+io.on("connection", (socket) => {
+  console.log("Client connected:", socket.id);
+
+  socket.on("offer", async (offer) => {
+    console.log("Received WebRTC offer.");
+    rtcPeerConnection = new wrtc.RTCPeerConnection(rtcConfig);
+
+    rtcPeerConnection.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit("candidate", event.candidate);
+      }
+    };
+
+    await rtcPeerConnection.setRemoteDescription(
+      new wrtc.RTCSessionDescription(offer)
+    );
+
+    const answer = await rtcPeerConnection.createAnswer();
+    await rtcPeerConnection.setLocalDescription(answer);
+
+    socket.emit("answer", answer);
+
+    // Stream will only start if test is running
+    if (senderStream) {
+      videoSource = new wrtc.nonstandard.RTCVideoSource();
+      videoTrack = videoSource.createTrack();
+
+      const readableStream = new Readable().wrap(senderStream.pipe());
+      readableStream.on("data", (chunk) => {
+        videoSource.onFrame({ data: chunk, width: 1280, height: 720 });
+      });
+
+      rtcPeerConnection.addTrack(videoTrack);
     }
+  });
 
-    if (stderr) {
-      console.error(`stderr: ${stderr}`);
-      return res.status(500).send(`Test run failed with error: ${stderr}`);
+  socket.on("candidate", async (candidate) => {
+    if (rtcPeerConnection) {
+      await rtcPeerConnection.addIceCandidate(
+        new wrtc.RTCIceCandidate(candidate)
+      );
     }
+  });
 
-    console.log(`stdout: ${stdout}`);
-
-    // Start capturing the screen after the test run has started
-    startScreenCapture();
-
-    res.send(`Test run completed successfully: ${stdout}`);
+  socket.on("disconnect", () => {
+    console.log("Client disconnected.");
+    if (rtcPeerConnection) {
+      rtcPeerConnection.close();
+      rtcPeerConnection = null;
+    }
+    if (senderStream) {
+      senderStream.kill("SIGTERM");
+      senderStream = null;
+    }
+    if (videoTrack) {
+      videoTrack.stop();
+      videoTrack = null;
+    }
   });
 });
 
-// Start screen capture using FFmpeg and store the video
-function startScreenCapture() {
-  const capturePath = path.join(__dirname, "capture.webm");
-
-  // Check if a previous capture file exists, and delete it if necessary
-  if (fs.existsSync(capturePath)) {
-    fs.unlinkSync(capturePath);
+// Route to trigger WebDriverIO test
+app.post("/run-test", (req, res) => {
+  if (childProcess) {
+    return res.status(400).json({ message: "Test is already running." });
   }
 
-  // Start FFmpeg to capture the screen and store it in the capture.webm file
-  const ffmpegCommand = `ffmpeg -f x11grab -s 1920x1080 -i :0.0 -f webm ${capturePath}`;
-  exec(ffmpegCommand, (error, stdout, stderr) => {
-    if (error) {
-      console.error(`FFmpeg error: ${error}`);
-      return;
-    }
+  console.log("Starting WDIO test...");
 
-    if (stderr) {
-      console.error(`FFmpeg stderr: ${stderr}`);
-      return;
-    }
+  // Start screen capture when test starts
+  senderStream = startScreenCapture();
 
-    console.log(`FFmpeg stdout: ${stdout}`);
+  childProcess = exec("npm run wdio");
+
+  childProcess.stdout.on("data", (data) => {
+    console.log(`stdout: ${data}`);
+    io.emit("test-log", data.toString());
   });
 
-  console.log("Screen capture started...");
-}
+  childProcess.stderr.on("data", (data) => {
+    console.error(`stderr: ${data}`);
+    io.emit("test-log", `Error: ${data}`);
+  });
+
+  childProcess.on("exit", (code) => {
+    console.log(`Test process exited with code ${code}`);
+
+    // Stop screen capture when test ends
+    if (senderStream) {
+      senderStream.kill("SIGTERM");
+      senderStream = null;
+    }
+
+    childProcess = null;
+  });
+
+  res.json({ message: "Test started, screen capture running." });
+});
+
+// Example route for checking server status
+app.get("/api/status", (req, res) => {
+  res.json({ message: "WDIO Express API with WebRTC streaming is working" });
+});
 
 // Start the server
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+server.listen(port, () => {
+  console.log(`Server running at http://34.93.172.107:${port}`);
 });
