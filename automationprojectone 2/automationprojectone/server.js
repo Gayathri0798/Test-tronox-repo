@@ -6,6 +6,13 @@ import cors from "cors";
 import wrtc from "wrtc";
 import ffmpeg from "fluent-ffmpeg";
 import { Readable } from "stream";
+import path from "path";
+import fs from "fs";
+import { fileURLToPath } from "url";
+
+// Fix __dirname in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 3000;
