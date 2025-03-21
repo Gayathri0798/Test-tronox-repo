@@ -19,22 +19,18 @@ export class AppComponent {
     this.socket = io('http://34.93.172.107:3000');
   }
 
-  onRunTestClick() {
+  onRunTestClick(): void {
     this.disableButton = true;
     this.appService.runTest().subscribe({
-      next: (data: any) => {
-        if (data) {
-          this.disableButton = false;
-
-          // Listen for video URL from WebSocket (after test completion)
-          this.socket.on('test-video', (videoData: any) => {
-            this.videoUrl = `http://34.93.172.107:3000${videoData.videoUrl}`;
-          });
-        }
+      next: () => {
+        console.log('Test execution started.');
       },
       error: (err) => {
+        console.error('Test execution failed:', err);
         this.disableButton = false;
-        console.log('Error', err);
+      },
+      complete: () => {
+        this.disableButton = false;
       },
     });
   }
