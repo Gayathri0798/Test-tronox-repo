@@ -10,20 +10,22 @@ import { StreamService } from '../stream.service';
   styles: ['video { width: 100%; height: auto; }'],
 })
 export class VideoStreamComponent implements AfterViewInit {
-  @ViewChild('videoPlayer', { static: false })
-  videoPlayer?: ElementRef<HTMLVideoElement>; // Optional for safety
+  @ViewChild('videoPlayer') videoPlayer!: ElementRef<HTMLVideoElement>;
 
   constructor(private streamService: StreamService) {}
 
   ngAfterViewInit() {
-    if (this.videoPlayer) {
-      this.streamService
-        .startStreaming(this.videoPlayer.nativeElement)
-        .catch((error) => {
-          console.error('❌ Error starting stream:', error);
-        });
-    } else {
-      console.error('⚠️ Video player not found!');
-    }
+    // Ensure ViewChild is available before accessing
+    Promise.resolve().then(() => {
+      if (this.videoPlayer?.nativeElement) {
+        this.streamService
+          .startStreaming(this.videoPlayer.nativeElement)
+          .catch((error) => {
+            console.error('❌ Error starting stream:', error);
+          });
+      } else {
+        console.error('⚠️ Video player not found!');
+      }
+    });
   }
 }

@@ -14,18 +14,20 @@ export class StreamService {
   }
 
   async startStreaming(videoElement: HTMLVideoElement) {
-    console.log('Initializing WebRTC connection...');
+    console.log('🎥 Initializing WebRTC connection...');
+
+    // Cleanup existing connection if already open
+    if (this.peerConnection) {
+      console.warn('⚠️ Closing existing WebRTC connection...');
+      this.peerConnection.close();
+    }
 
     this.peerConnection = new RTCPeerConnection({
       iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
     });
 
     this.remoteStream = new MediaStream();
-
-    // Ensure the video stream gets assigned properly
-    setTimeout(() => {
-      videoElement.srcObject = this.remoteStream;
-    }, 500);
+    videoElement.srcObject = this.remoteStream; // ✅ Set immediately
 
     this.peerConnection.ontrack = (event) => {
       console.log('🔹 Received track:', event.track);
@@ -46,7 +48,14 @@ export class StreamService {
       const offer = await this.peerConnection.createOffer();
       await this.peerConnection.setLocalDescription(offer);
       console.log('📤 Sending Offer:', offer);
-      this.socket.emit('offer', offer);
+
+      // Ensure socket is connected before emitting
+      if (this.socket.connected) {
+        this.socket.emit('offer', offer);
+      } else {
+        console.error('❌ Socket connection lost. Reconnecting...');
+        this.socket.connect();
+      }
     } catch (error) {
       console.error('❌ Error creating or sending offer:', error);
     }
@@ -61,6 +70,7 @@ export class StreamService {
       console.warn(
         '⚠️ Disconnected from WebSocket. Attempting to reconnect...'
       );
+      this.socket.connect(); // Auto-reconnect
     });
 
     this.socket.on('answer', async (answer) => {
