@@ -54,7 +54,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit(): void {
     // Connect to Socket.IO (Replace with your GCP IP)
-    this.socket = io('http://<your-gcp-ip>:3000');
+    this.socket = io('http://35.200.245.66/:3000');
 
     // Receive video frames and update videoUrl
     this.socket.on('frame', (data: string) => {
@@ -64,7 +64,7 @@ export class AppComponent implements OnInit {
 
   onRunTestClick(): void {
     console.log('Run Test button clicked!');
-    this.http.post('http://<your-gcp-ip>:3000/run-test', {}).subscribe({
+    this.http.post('http://35.200.245.66/:3000/run-test', {}).subscribe({
       next: (response) => console.log('✅ Test started:', response),
       error: (error) => console.error('❌ Error starting test:', error),
     });
