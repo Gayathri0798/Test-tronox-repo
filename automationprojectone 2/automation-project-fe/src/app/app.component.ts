@@ -48,17 +48,17 @@ import { io } from 'socket.io-client';
 })
 export class AppComponent implements OnInit {
   private socket: any;
+  videoUrl: string = ''; // ✅ Add this property
 
   constructor(private http: HttpClient) {}
 
   ngOnInit(): void {
-    // Connect to the Socket.IO server (Replace with your GCP IP)
+    // Connect to Socket.IO (Replace with your GCP IP)
     this.socket = io('http://<your-gcp-ip>:3000');
 
-    // Listen for video frames from the server and update image
+    // Receive video frames and update videoUrl
     this.socket.on('frame', (data: string) => {
-      const img = document.getElementById('stream') as HTMLImageElement;
-      if (img) img.src = data; // Display the video frame
+      this.videoUrl = data; // ✅ Update video stream
     });
   }
 
