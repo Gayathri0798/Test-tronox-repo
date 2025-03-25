@@ -1,4 +1,4 @@
- <!-- <div class="main-container">
+ <div class="main-container">
   <div class="container">
     <button class="run-test-btn" (click)="onRunTestClick()" [disabled]="disableButton">
       {{ disableButton ? 'Running...' : 'Run Test' }}
@@ -7,16 +7,4 @@
       <img [src]="videoUrl" alt="Puppeteer Stream" width="1280" height="720" />
     </div>
   </div>
-</div> -->
-<!-- src/app/app.component.html -->
-<div class="main-container">
-  <div class="container">
-  <button (click)="onRunTestClick()">Run Test</button>
-
-  <!-- Display Puppeteer Video Stream -->
-  <div *ngIf="videoUrl">
-    <img [src]="videoUrl" alt="Puppeteer Stream" width="1280" height="720" />
-  </div>
 </div>
-</div>
-
