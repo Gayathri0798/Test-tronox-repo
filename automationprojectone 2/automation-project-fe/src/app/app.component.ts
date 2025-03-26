@@ -7,7 +7,7 @@ import { io, Socket } from 'socket.io-client';
   standalone: true,
   imports: [],
   templateUrl: './app.component.html',
-  styleUrl: ''
+  styleUrl: './app.component.css',
 })
 export class AppComponent {
   title = 'automation-project-fe';
