@@ -5,7 +5,7 @@ import { io } from 'socket.io-client';
   providedIn: 'root',
 })
 export class StreamService {
-  private socket = io('http://34.93.172.107:3000');
+  private socket = io('http://35.200.245.66:3000');
   private peerConnection!: RTCPeerConnection;
   private remoteStream!: MediaStream;
 

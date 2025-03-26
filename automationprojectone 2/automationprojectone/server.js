@@ -268,19 +268,25 @@ const app = express();
 const port = 3000;
 const server = http.createServer(app);
 
-// Configure CORS
 const corsOptions = {
-  origin: "*",
+  origin: "http://35.200.245.66", // Angular App IP
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
   credentials: true,
 };
 
+// Apply CORS to Express
 app.use(cors(corsOptions));
 
+// Apply CORS to Socket.IO
 const io = new Server(server, {
-  cors: corsOptions,
+  cors: {
+    origin: "http://35.200.245.66",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
 });
+
 
 // WebSocket connection
 io.on("connection", (socket) => {
