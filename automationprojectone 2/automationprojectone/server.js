@@ -148,7 +148,7 @@
 // server.listen(port, () => {
 //   console.log(`Server running at http://34.93.172.107:${port}`);
 // });
-//Capture screenshots using node.js
+
 import express from "express";
 import { exec } from "child_process";
 import http from "http";
