@@ -6,12 +6,17 @@
     <div *ngIf="videoUrl">
       <img [src]="videoUrl" alt="Puppeteer Stream" width="1280" height="720" />
     </div> -->
-    <h1>Puppeteer Video Streaming</h1>
+    <h1>{{ title }}</h1>
 
-  <button class="run-test-btn" (click)="onRunTestClick()">Run Test</button>
+  <button (click)="onRunTestClick()" [disabled]="disableButton">
+    Run Test
+  </button>
 
-  <div class="stream-container">
-    <img [src]="videoUrl" alt="Puppeteer Stream" width="1280" height="720" />
-  </div>
+  @if (videoUrl) {
+    <div>
+      <h2>Puppeteer Stream</h2>
+      <img [src]="videoUrl" alt="Puppeteer Stream" width="1280" height="720" />
+    </div>
+  }
   </div>
 </div>
