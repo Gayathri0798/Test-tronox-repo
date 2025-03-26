@@ -149,114 +149,6 @@
 //   console.log(`Server running at http://34.93.172.107:${port}`);
 // });
 //Capture screenshots using node.js
-// import express from "express";
-// import { exec } from "child_process";
-// import http from "http";
-// import { Server } from "socket.io";
-// import cors from "cors";
-// import puppeteer from "puppeteer";
-
-// const app = express();
-// const port = 3000;
-// const server = http.createServer(app);
-
-// // Configure CORS
-// const corsOptions = {
-//   origin: "*",
-//   methods: ["GET", "POST"],
-//   allowedHeaders: ["Content-Type"],
-//   credentials: true,
-// };
-
-// app.use(cors(corsOptions));
-
-// const io = new Server(server, {
-//   cors: corsOptions,
-// });
-
-// // WebSocket connection
-// io.on("connection", (socket) => {
-//   console.log("Client connected:", socket.id);
-
-//   socket.on("disconnect", () => {
-//     console.log("Client disconnected.");
-//   });
-// });
-
-// // Route to trigger Puppeteer test
-// app.post("/run-test", async (req, res) => {
-//   console.log("Starting Puppeteer test with video streaming...");
-
-//   (async () => {
-//     try {
-//       const browser = await puppeteer.launch({
-//         headless: false, // Disable headless to see if errors appear in UI
-//         args: ["--no-sandbox",
-//     "--disable-setuid-sandbox",
-//     "--disable-dev-shm-usage",
-//     "--disable-gpu",
-//     "--disable-software-rasterizer",
-//     "--ignore-certificate-errors",
-//     "--ignore-certificate-errors-spki-list",
-//     "--proxy-server='direct://'", // Bypass proxy
-//     "--proxy-bypass-list=*", // Prevent proxy interference
-//     "--host-resolver-rules='MAP * ~NOTFOUND , EXCLUDE localhost'", // Force DNS resolution
-//     ],
-//       });
-
-//       const page = await browser.newPage();
-//       await page.setViewport({ width: 1280, height: 720 });
-
-//       // ✅ Test if Puppeteer can access the internet
-//       try {
-//         await page.goto("https://www.google.com", { waitUntil: "networkidle2" });
-//         console.log("✅ Puppeteer successfully accessed Google.");
-//       } catch (error) {
-//         console.error("❌ Puppeteer cannot access the internet:", error.message);
-//         io.emit("test-log", `Error: Cannot access the internet - ${error.message}`);
-//         await browser.close();
-//         return;
-//       }
-
-//       // 🔵 Now navigate to the actual test page
-//       await page.goto("https://the-internet.herokuapp.com/login");
-
-//       await page.type("#username", "tomsmith");
-//       await page.type("#password", "SuperSecretPassword!");
-//       await page.click('button[type="submit"]');
-
-//       await page.waitForSelector("#flash");
-//       const flashText = await page.$eval("#flash", (el) => el.textContent.trim());
-
-//       console.log("Flash Message:", flashText);
-//       io.emit("test-log", flashText);
-
-//       // Test done, close browser after 10 seconds
-//       setTimeout(async () => {
-//         await browser.close();
-//         console.log("Puppeteer test completed!");
-//       }, 10000);
-//     } catch (error) {
-//       console.error("Puppeteer error:", error);
-//       io.emit("test-log", `Error: ${error.message}`);
-//     }
-//   })();
-
-//   res.json({ message: "Test started with Puppeteer & Video Streaming." });
-// });
-
-
-// // Example route for checking server status
-// app.get("/api/status", (req, res) => {
-//   res.json({ message: "Puppeteer Express API is working" });
-// });
-
-// // Start the server
-// server.listen(port, () => {
-//   console.log(`Server running at http://localhost:${port}`);
-// });
-
-//Video streaming code 
 import express from "express";
 import { exec } from "child_process";
 import http from "http";
@@ -268,25 +160,19 @@ const app = express();
 const port = 3000;
 const server = http.createServer(app);
 
+// Configure CORS
 const corsOptions = {
-  origin: "http://35.200.245.66", // Angular App IP
+  origin: "*",
   methods: ["GET", "POST"],
   allowedHeaders: ["Content-Type"],
   credentials: true,
 };
 
-// Apply CORS to Express
 app.use(cors(corsOptions));
 
-// Apply CORS to Socket.IO
 const io = new Server(server, {
-  cors: {
-    origin: "http://35.200.245.66",
-    methods: ["GET", "POST"],
-    credentials: true,
-  },
+  cors: corsOptions,
 });
-
 
 // WebSocket connection
 io.on("connection", (socket) => {
@@ -297,71 +183,70 @@ io.on("connection", (socket) => {
   });
 });
 
-// Route to trigger Puppeteer with video streaming
+// Route to trigger Puppeteer test
 app.post("/run-test", async (req, res) => {
   console.log("Starting Puppeteer test with video streaming...");
 
-  try {
-    const browser = await puppeteer.launch({
-      headless: false,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu",
-        "--disable-software-rasterizer",
-        "--ignore-certificate-errors",
-        "--ignore-certificate-errors-spki-list",
-        "--proxy-server='direct://'", // Bypass proxy
-        "--proxy-bypass-list=*", // Prevent proxy interference
-        "--host-resolver-rules='MAP * ~NOTFOUND , EXCLUDE localhost'", // Force DNS resolution
-      ],
-    });
+  (async () => {
+    try {
+      const browser = await puppeteer.launch({
+        headless: false, // Disable headless to see if errors appear in UI
+        args: ["--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--disable-gpu",
+    "--disable-software-rasterizer",
+    "--ignore-certificate-errors",
+    "--ignore-certificate-errors-spki-list",
+    "--proxy-server='direct://'", // Bypass proxy
+    "--proxy-bypass-list=*", // Prevent proxy interference
+    "--host-resolver-rules='MAP * ~NOTFOUND , EXCLUDE localhost'", // Force DNS resolution
+    ],
+      });
 
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 720 });
+      const page = await browser.newPage();
+      await page.setViewport({ width: 1280, height: 720 });
 
-    // ✅ Navigate to test page
-    await page.goto("https://the-internet.herokuapp.com/login", {
-      waitUntil: "networkidle2",
-    });
-    console.log("✅ Page loaded.");
-
-    // Start sending frames to the client
-    const streamFrames = setInterval(async () => {
+      // ✅ Test if Puppeteer can access the internet
       try {
-        const screenshot = await page.screenshot({ encoding: "base64" });
-        io.emit("frame", `data:image/png;base64,${screenshot}`);
+        await page.goto("https://www.google.com", { waitUntil: "networkidle2" });
+        console.log("✅ Puppeteer successfully accessed Google.");
       } catch (error) {
-        console.error("❌ Error capturing screenshot:", error);
+        console.error("❌ Puppeteer cannot access the internet:", error.message);
+        io.emit("test-log", `Error: Cannot access the internet - ${error.message}`);
+        await browser.close();
+        return;
       }
-    }, 500); // Capture frames every 500ms
 
-    // Perform automated actions
-    await page.type("#username", "tomsmith");
-    await page.type("#password", "SuperSecretPassword!");
-    await page.click('button[type="submit"]');
+      // 🔵 Now navigate to the actual test page
+      await page.goto("https://the-internet.herokuapp.com/login");
 
-    await page.waitForSelector("#flash");
-    const flashText = await page.$eval("#flash", (el) => el.textContent.trim());
-    console.log("Flash Message:", flashText);
-    io.emit("test-log", flashText);
+      await page.type("#username", "tomsmith");
+      await page.type("#password", "SuperSecretPassword!");
+      await page.click('button[type="submit"]');
 
-    // Stop after 30 seconds
-    setTimeout(async () => {
-      clearInterval(streamFrames);
-      await browser.close();
-      console.log("✅ Puppeteer test completed.");
-    }, 30000);
-  } catch (error) {
-    console.error("❌ Puppeteer error:", error);
-    io.emit("test-log", `Error: ${error.message}`);
-  }
+      await page.waitForSelector("#flash");
+      const flashText = await page.$eval("#flash", (el) => el.textContent.trim());
+
+      console.log("Flash Message:", flashText);
+      io.emit("test-log", flashText);
+
+      // Test done, close browser after 10 seconds
+      setTimeout(async () => {
+        await browser.close();
+        console.log("Puppeteer test completed!");
+      }, 10000);
+    } catch (error) {
+      console.error("Puppeteer error:", error);
+      io.emit("test-log", `Error: ${error.message}`);
+    }
+  })();
 
   res.json({ message: "Test started with Puppeteer & Video Streaming." });
 });
 
-// Health check route
+
+// Example route for checking server status
 app.get("/api/status", (req, res) => {
   res.json({ message: "Puppeteer Express API is working" });
 });

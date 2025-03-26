@@ -1,22 +1,5 @@
- <div class="main-container">
+<div class="main-container">
   <div class="container">
-    <!-- <button class="run-test-btn" (click)="onRunTestClick()" [disabled]="disableButton">
-      {{ disableButton ? 'Running...' : 'Run Test' }}
-    </button>
-    <div *ngIf="videoUrl">
-      <img [src]="videoUrl" alt="Puppeteer Stream" width="1280" height="720" />
-    </div> -->
-    <h1>{{ title }}</h1>
-
-  <button (click)="onRunTestClick()" [disabled]="disableButton">
-    Run Test
-  </button>
-
-  @if (videoUrl) {
-    <div>
-      <h2>Puppeteer Stream</h2>
-      <img [src]="videoUrl" alt="Puppeteer Stream" width="1280" height="720" />
-    </div>
-  }
+    <button class="run-test-btn" (click)="onRunTestClick()">Run Test</button>
   </div>
 </div>
