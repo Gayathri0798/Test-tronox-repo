@@ -7,7 +7,43 @@ import { io, Socket } from 'socket.io-client';
   standalone: true,
   imports: [],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.css',
+  styles: [
+    `
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f4f4f4;
+      font-family: Arial, sans-serif;
+    }
+ 
+    .run-test-btn {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s ease-in-out;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    }
+ 
+    .run-test-btn:hover {
+      background-color: #0056b3;
+      transform: scale(1.05);
+    }
+ 
+    .main-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 50px;
+    }
+    `
+  ]
 })
 export class AppComponent {
   title = 'automation-project-fe';
