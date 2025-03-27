@@ -5,7 +5,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import puppeteer from "puppeteer";
 const app = express();
-const port = 3000;
+const port = 3002;
 const server = http.createServer(app);
 
 // Configure CORS

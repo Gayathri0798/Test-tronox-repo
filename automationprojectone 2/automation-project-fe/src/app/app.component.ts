@@ -16,7 +16,7 @@ export class AppComponent {
   private socket: Socket;
 
   constructor(private appService: AppService) {
-    this.socket = io('http://35.200.245.66:3000');
+    this.socket = io('http://35.200.245.66:3002');
   }
 
   onRunTestClick(): void {
